@@ -11,7 +11,7 @@ Metadata:
   AWS::ServerlessRepo::Application:
     Name: serverless-security-demo
     Description: Simple serverless application to demonstrate security concepts
-    Author: Samuel Waymouth
+    Author: Vanessa Hernandez
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE.txt
     ReadmeUrl: README.md
@@ -70,7 +70,7 @@ Resources:
      Properties:
        DesiredDeliveryMediums:
          - EMAIL
-       Username: swaym@amazon.co.uk
+       Username: vamateos@amazon.com
        UserPoolId: !Ref SrvSecDemoCognitoUserPool
 
   HomePageFunction:
