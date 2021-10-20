@@ -1,0 +1,279 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  serverless-security-demo
+
+  Sample SAM Template for serverless-security-demo
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: serverless-security-demo
+    Description: Simple serverless application to demonstrate security concepts
+    Author: Samuel Waymouth
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['tests']
+    HomePageUrl: https://github.com/sita158/serv-sec-demo-samcli.git
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/sita158/serv-sec-demo-samcli.git
+    
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  SecureApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Dev
+      Cors:
+        AllowMethods: "'OPTIONS, GET, POST'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: SrvSecDemoCognitoAuthorizer
+        Authorizers:
+          SrvSecDemoCognitoAuthorizer:
+            UserPoolArn: !GetAtt SrvSecDemoCognitoUserPool.Arn
+        AddDefaultAuthorizerToCorsPreflight: False
+
+  SrvSecDemoCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: SrvSecDemoCognitoUserPool
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: false
+  
+  SrvSecDemoCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref SrvSecDemoCognitoUserPool
+      ClientName: SrvSecDemoCognitoUserPoolClient
+      GenerateSecret: false
+
+  UserPoolUser:
+     Type: AWS::Cognito::UserPoolUser
+     Properties:
+       DesiredDeliveryMediums:
+         - EMAIL
+       Username: swaym@amazon.co.uk
+       UserPoolId: !Ref SrvSecDemoCognitoUserPool
+
+  HomePageFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: home.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref Securitylayer
+      Events:
+        Root:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref SecureApi
+            Path: /home
+            Method: GET
+      Environment:
+        Variables:
+          loglevel: DEBUG
+
+  SecretFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: secret.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref Securitylayer
+      Events:
+        Root:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref SecureApi
+            Path: /secret
+            Method: GET
+      Environment:
+        Variables:
+          loglevel: DEBUG
+  
+  CommandFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: cmd.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref Securitylayer
+      Events:
+        Root:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref SecureApi
+            Path: /cmd
+            Method: POST
+      Environment:
+        Variables:
+          loglevel: INFO
+
+  ReadFromDynamoDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: rddb.lambda_handler
+      Runtime: python3.8
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SecureApi
+            Path: /rddb
+            Method: get
+      Environment:
+        Variables:
+          loglevel: INFO
+          table: !Ref TableOfStuff
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TableOfStuff
+
+  WriteToDynamoDBFunction:
+    Type: AWS::Serverless::Function      
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: wddb.lambda_handler
+      Runtime: python3.8
+      Events:
+        Root:
+          Type: Api 
+          Properties:
+            RestApiId: !Ref SecureApi
+            Path: /wddb
+            Method: post
+      Environment:
+        Variables:
+          loglevel: INFO
+          table: !Ref TableOfStuff
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableOfStuff
+
+  BadApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: badapi.lambda_handler
+      Runtime: python3.8
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            Path: /badapi
+            Method: post
+      Environment:
+        Variables:
+          loglevel: DEBUG
+
+  GoodApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: goodapi.lambda_handler
+      Runtime: python3.8
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            Path: /goodapi
+            Method: post
+      Environment:
+        Variables:
+          loglevel: INFO
+
+  InvokeApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: security_serverless_demo/
+      Handler: invokeapi.lambda_handler
+      Runtime: python3.8
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SecureApi
+            Path: /invokeapi
+            Method: post
+      Environment:
+        Variables:
+          loglevel: DEBUG
+          apiurl: !Sub "put bad api url here"
+
+  TableOfStuff:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema: 
+          - 
+            AttributeName: "uuid"
+            KeyType: "HASH"
+          -
+            AttributeName: "surname"
+            KeyType: "RANGE"
+      AttributeDefinitions: 
+          - 
+            AttributeName: "uuid"
+            AttributeType: "S"
+          - 
+            AttributeName: "surname"
+            AttributeType: "S"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+
+  Securitylayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./security_layer
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HomePageApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/home"
+  SecretFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Secret function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/secret"
+  CommandFunctionApi:
+    Description: "API Gateway endpoint URL for Prod stage for Command function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/cmd"
+  ReadFromDynamoDBFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Read from Dynamodb function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/rddb"
+  WriteToDynamoDBFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Write to Dynamodb function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/wddb"
+  BadApi:
+    Description: "API Gateway endpoint URL for Dev stage for a Bad API function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/badapi"
+  InvokeApi:
+    Description: "API Gateway endpoint URL for Dev stage for a Bad API function"
+    Value: !Sub "https://${SecureApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/invokeapi"
