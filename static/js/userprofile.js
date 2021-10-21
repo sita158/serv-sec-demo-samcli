@@ -2,11 +2,11 @@ var myHeaders = new Headers();
 myHeaders.set('Cache-Control', 'no-store');
 var urlParams = new URLSearchParams(window.location.search);
 var tokens;
-var domain = "srv-sec-demo";
+var domain = "srv-sec-vamateos";
 var region = "us-east-1";
-var appClientId = "2ievq9d70fs2g7ajth6e56snvi";
-var userPoolId = "us-east-1_Li0M7pVYo";
-var redirectURI = "https://diq3qr0d5ppph.cloudfront.net/index.html";
+var appClientId = "1hcn6b635g7h6s48m3v6ldod3g";
+var userPoolId = "us-east-1_FcqkxKPDD";
+var redirectURI = "https://dgvsm7300j53z.cloudfront.net/";
 
 //Convert Payload from Base64-URL to JSON
 const decodePayload = payload => {

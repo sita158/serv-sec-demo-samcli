@@ -19,12 +19,12 @@
  * Change the following lines to reflect your Cognito User Pool, API Gateway,
  * S3 bucket and region configuration.
  */
-CognitoDomainName = "srv-sec-demo";
-CognitoClientId   = "2ievq9d70fs2g7ajth6e56snvi";
-APIGatewayId      = "9hrlob5hyc";
+CognitoDomainName = "srv-sec-vamateos";
+CognitoClientId   = "1hcn6b635g7h6s48m3v6ldod3g";
+APIGatewayId      = "77fos7vci9";
 RegionName        = "us-east-1";
-S3BucketName      = "srvsecdemo-static-pages";
-CloudFrontName    = "diq3qr0d5ppph.cloudfront.net";
+S3BucketName      = "serv-sec-demo-vamateos";
+CloudFrontName    = "dgvsm7300j53z.cloudfront.net";
 
 USER_API_URL  = "https://"+APIGatewayId+".execute-api."+RegionName+".amazonaws.com/Dev/home"
 SECRET_API_URL = "https://"+APIGatewayId+".execute-api."+RegionName+".amazonaws.com/Dev/secret"
@@ -98,7 +98,8 @@ function login() {
 }
 
 function GetWorkspacesDetails(GetAllWorkspaces) {
- var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
+ //var accessToken = localStorage.getItem('WorkspacesAccessToken');
  var API_URL = USER_API_URL;
  if (GetAllWorkspaces) { API_URL += "?ListAll=True" }
 
@@ -235,7 +236,8 @@ function ProcessTimeout() {
 }
 
 function WorkspacesAction(Action, InstanceId) {
- var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
+ //var accessToken = localStorage.getItem('WorkspacesAccessToken');
  var API_URL = ADMIN_API_URL;
 
  API_URL += "?Action="+Action+"&InstanceId="+InstanceId;
@@ -307,7 +309,8 @@ function GetHomePage() {
 }
 
 function GetSecretPage() {
-  var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  //var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
   var API_URL = SECRET_API_URL;
   var API_Client = new XMLHttpRequest();
   API_Client.onreadystatechange = function() {
@@ -331,10 +334,12 @@ function GetSecretPage() {
 }
 
 function RunCommand() {
-  var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
+  //var accessToken = localStorage.getItem('WorkspacesAccessToken');
   //var API_URL = RUNCMD_API_URL+"?command="+document.getElementById("command").value;
   var API_URL = RUNCMD_API_URL;
   var API_Client = new XMLHttpRequest();
+  //API_Client.setRequestHeader("Authorization", accessToken);
   let urlEncodedData = "",
       urlEncodedDataPairs = [];
   urlEncodedDataPairs.push( encodeURIComponent( "command" ) + '=' + encodeURIComponent( document.getElementById("command").value) );
@@ -362,7 +367,8 @@ function RunCommand() {
 }
 
 function WriteToDynamoDb() {
-  var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
+  //var accessToken = localStorage.getItem('WorkspacesAccessToken');
   //var API_URL = RUNCMD_API_URL+"?command="+document.getElementById("command").value;
   var API_URL = WDDB_API_URL;
   var API_Client = new XMLHttpRequest();
@@ -395,7 +401,8 @@ function WriteToDynamoDb() {
 }
 
 function ReadFromDynamoDb() {
-  var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
+  //var accessToken = localStorage.getItem('WorkspacesAccessToken');
   //var API_URL = RUNCMD_API_URL+"?command="+document.getElementById("command").value;
   var API_URL = RDDB_API_URL;
   var API_Client = new XMLHttpRequest();
@@ -420,7 +427,8 @@ function ReadFromDynamoDb() {
 }
 
 function InvokeAPI() {
-  var accessToken = localStorage.getItem('WorkspacesAccessToken');
+  var accessToken = tokens.id_token;
+  //var accessToken = localStorage.getItem('WorkspacesAccessToken');
   //var API_URL = RUNCMD_API_URL+"?command="+document.getElementById("command").value;
   var API_URL = INVOKE_API_URL;
   var API_Client = new XMLHttpRequest();
